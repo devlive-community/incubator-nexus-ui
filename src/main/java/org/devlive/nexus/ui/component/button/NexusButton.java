@@ -1,11 +1,17 @@
 package org.devlive.nexus.ui.component.button;
 
+import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Arc;
+import javafx.scene.shape.ArcType;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import org.devlive.nexus.ui.core.Component;
 
@@ -18,6 +24,7 @@ public class NexusButton
     private ButtonSize size = ButtonSize.DEFAULT;
     private boolean disabled = false;
     private boolean loading = false;
+    private RotateTransition rotation;
 
     // 添加静态工厂方法
     // Add static factory method
@@ -67,18 +74,21 @@ public class NexusButton
     {
         Button button = new Button();
         HBox content = new HBox(5);
+        content.setAlignment(Pos.CENTER);
 
         // 添加加载图标
         // Add loading icon
         if (loading) {
-            Text loadingIcon = new Text("⟳");
-            setupLoadingAnimation(loadingIcon);
+            StackPane loadingIcon = createLoadingIcon();
             content.getChildren().add(loadingIcon);
         }
 
-        // 添加文本
-        // Add text
+        // 创建文本节点并设置初始颜色
+        // Create text node and set initial color
         Text textNode = new Text(text);
+        textNode.setTextAlignment(TextAlignment.CENTER);
+        Color textColor = getTextColor();
+        textNode.setFill(textColor);
         content.getChildren().add(textNode);
 
         button.setGraphic(content);
@@ -103,7 +113,7 @@ public class NexusButton
         }
 
         if (style.getTextColor() != null) {
-            button.setTextFill(style.getTextColor());
+            textNode.setFill(style.getTextColor());
         }
 
         // 设置事件处理器
@@ -115,49 +125,47 @@ public class NexusButton
         return button;
     }
 
+    private Color getTextColor()
+    {
+        return switch (type) {
+            case PRIMARY, SUCCESS, WARNING, DANGER, INFO -> Color.WHITE;
+            case TEXT, DEFAULT -> Color.rgb(55, 65, 81);
+        };
+    }
+
     private void applyStyle(Button button)
     {
-        Color textColor;
         Color bgColor;
         Color hoverBgColor;
-        Color disabledBgColor = Color.rgb(229, 231, 235); // Gray-200
-        Color disabledTextColor = Color.rgb(156, 163, 175); // Gray-400
 
         switch (type) {
             case PRIMARY -> {
                 bgColor = Color.rgb(59, 130, 246);
                 hoverBgColor = Color.rgb(37, 99, 235);
-                textColor = Color.WHITE;
             }
             case SUCCESS -> {
                 bgColor = Color.rgb(34, 197, 94);
                 hoverBgColor = Color.rgb(22, 163, 74);
-                textColor = Color.WHITE;
             }
             case WARNING -> {
                 bgColor = Color.rgb(245, 158, 11);
                 hoverBgColor = Color.rgb(217, 119, 6);
-                textColor = Color.WHITE;
             }
             case DANGER -> {
                 bgColor = Color.rgb(239, 68, 68);
                 hoverBgColor = Color.rgb(220, 38, 38);
-                textColor = Color.WHITE;
             }
             case INFO -> {
                 bgColor = Color.rgb(99, 102, 241);
                 hoverBgColor = Color.rgb(79, 70, 229);
-                textColor = Color.WHITE;
             }
             case TEXT -> {
                 bgColor = Color.WHITE;
                 hoverBgColor = Color.WHITE;
-                textColor = Color.rgb(55, 65, 81);
             }
             default -> {
                 bgColor = Color.rgb(243, 244, 246);
                 hoverBgColor = Color.rgb(229, 231, 235);
-                textColor = Color.rgb(55, 65, 81);
             }
         }
 
@@ -165,14 +173,15 @@ public class NexusButton
         // Combine base styles and size styles
         String sizeStyle = getSizeStyle();
         StringBuilder styleBuilder = new StringBuilder()
-                .append("-fx-background-radius: 6px;")
+                .append("-fx-background-radius: 0.375em;")
                 .append(sizeStyle)
-                .append("-fx-cursor: ").append((disabled || loading) ? "cursor-not-allowed" : "hand").append(";")
+                .append("-fx-cursor: ").append((disabled || loading) ? "not-allowed, cursor-not-allowed" : "hand, pointer").append(";")
                 .append("-fx-background-color: ").append(toCssColor(bgColor)).append(";")
-                .append("-fx-text-fill: ").append(toCssColor(textColor)).append(";");
+                .append("-fx-focus-color: transparent;")
+                .append("-fx-faint-focus-color: transparent;");
 
-        // 添加禁用状态的透明度
-        // Add opacity for disabled state
+        // 添加禁用状态的透明度和颜色
+        // Add opacity and color for disabled state
         if (disabled || loading) {
             styleBuilder.append("-fx-opacity: 0.4;");
         }
@@ -205,18 +214,10 @@ public class NexusButton
     private String getSizeStyle()
     {
         return switch (size) {
-            case SMALL -> "-fx-padding: 4px 8px; -fx-font-size: 12px;";
-            case LARGE -> "-fx-padding: 12px 20px; -fx-font-size: 16px;";
-            default -> "-fx-padding: 8px 16px; -fx-font-size: 14px;";
+            case SMALL -> "-fx-padding: 0.25em 0.5em; -fx-font-size: 0.875em;";
+            case LARGE -> "-fx-padding: 0.75em 1.25em; -fx-font-size: 1.125em;";
+            default -> "-fx-padding: 0.5em 1em; -fx-font-size: 1em;";
         };
-    }
-
-    private void setupLoadingAnimation(Text loadingIcon)
-    {
-        RotateTransition rotation = new RotateTransition(Duration.seconds(1), loadingIcon);
-        rotation.setByAngle(360);
-        rotation.setCycleCount(RotateTransition.INDEFINITE);
-        rotation.play();
     }
 
     private String toCssColor(Color color)
@@ -227,5 +228,61 @@ public class NexusButton
                 (int) (color.getGreen() * 255),
                 (int) (color.getBlue() * 255)
         );
+    }
+
+    private StackPane createLoadingIcon()
+    {
+        double size = 12;
+
+        // 创建圆弧
+        // Create an arc
+        Arc arc = new Arc();
+        arc.setRadiusX(size / 2);
+        arc.setRadiusY(size / 2);
+        arc.setStartAngle(0);
+        // 画一个缺口的圆弧
+        // Draw a gap in the arc
+        arc.setLength(270);
+        arc.setType(ArcType.OPEN);
+        arc.setFill(null);
+        arc.setStrokeWidth(2);
+
+        // 设置圆弧颜色与文字颜色一致
+        // Set arc color to match text color
+        Color strokeColor = getTextColor();
+        arc.setStroke(strokeColor);
+
+        // 使用StackPane来居中显示圆弧
+        // Use StackPane to center the arc
+        StackPane container = new StackPane(arc);
+        container.setMinSize(size, size);
+        container.setMaxSize(size, size);
+        container.setPrefSize(size, size);
+
+        // 设置旋转动画
+        // Set rotation animation
+        this.rotation = new RotateTransition(Duration.seconds(1), container);
+        this.rotation.setFromAngle(0);
+        this.rotation.setToAngle(360);
+        this.rotation.setCycleCount(RotateTransition.INDEFINITE);
+        this.rotation.setInterpolator(Interpolator.LINEAR);
+        this.rotation.play();
+
+        return container;
+    }
+
+    private void cleanupResources()
+    {
+        if (rotation != null) {
+            rotation.stop();
+            rotation = null;
+        }
+    }
+
+    @Override
+    public void dispose()
+    {
+        cleanupResources();
+        super.dispose();
     }
 }
