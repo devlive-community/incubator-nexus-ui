@@ -1,8 +1,12 @@
 package org.devlive.nexus.ui.component.button;
 
+import javafx.animation.RotateTransition;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
+import javafx.util.Duration;
 import org.devlive.nexus.ui.core.Component;
 
 public class NexusButton
@@ -13,6 +17,7 @@ public class NexusButton
     private ButtonType type = ButtonType.DEFAULT;
     private ButtonSize size = ButtonSize.DEFAULT;
     private boolean disabled = false;
+    private boolean loading = false;
 
     // 添加静态工厂方法
     // Add static factory method
@@ -44,6 +49,12 @@ public class NexusButton
         return this;
     }
 
+    public NexusButton loading(boolean loading)
+    {
+        this.loading = loading;
+        return this;
+    }
+
     @Override
     public NexusButton onClick(Runnable action)
     {
@@ -54,7 +65,23 @@ public class NexusButton
     @Override
     public Parent render()
     {
-        Button button = new Button(text);
+        Button button = new Button();
+        HBox content = new HBox(5);
+
+        // 添加加载图标
+        // Add loading icon
+        if (loading) {
+            Text loadingIcon = new Text("⟳");
+            setupLoadingAnimation(loadingIcon);
+            content.getChildren().add(loadingIcon);
+        }
+
+        // 添加文本
+        // Add text
+        Text textNode = new Text(text);
+        content.getChildren().add(textNode);
+
+        button.setGraphic(content);
 
         // 应用基础样式
         // Apply base styles
@@ -140,13 +167,13 @@ public class NexusButton
         StringBuilder styleBuilder = new StringBuilder()
                 .append("-fx-background-radius: 6px;")
                 .append(sizeStyle)
-                .append("-fx-cursor: ").append(disabled ? "cursor-not-allowed" : "hand").append(";")
-                .append("-fx-background-color: ").append(disabled ? toCssColor(disabledBgColor) : toCssColor(bgColor)).append(";")
-                .append("-fx-text-fill: ").append(disabled ? toCssColor(disabledTextColor) : toCssColor(textColor)).append(";");
+                .append("-fx-cursor: ").append((disabled || loading) ? "cursor-not-allowed" : "hand").append(";")
+                .append("-fx-background-color: ").append(toCssColor(bgColor)).append(";")
+                .append("-fx-text-fill: ").append(toCssColor(textColor)).append(";");
 
         // 添加禁用状态的透明度
         // Add opacity for disabled state
-        if (disabled) {
+        if (disabled || loading) {
             styleBuilder.append("-fx-opacity: 0.4;");
         }
 
@@ -156,7 +183,7 @@ public class NexusButton
 
         // 只在非禁用状态下添加鼠标悬停效果
         // Add hover effect only when not disabled
-        if (!disabled) {
+        if (!disabled && !loading) {
             button.setOnMouseEntered(e -> {
                 String hoverStyle = baseStyle.replace(
                         toCssColor(bgColor),
@@ -182,6 +209,14 @@ public class NexusButton
             case LARGE -> "-fx-padding: 12px 20px; -fx-font-size: 16px;";
             default -> "-fx-padding: 8px 16px; -fx-font-size: 14px;";
         };
+    }
+
+    private void setupLoadingAnimation(Text loadingIcon)
+    {
+        RotateTransition rotation = new RotateTransition(Duration.seconds(1), loadingIcon);
+        rotation.setByAngle(360);
+        rotation.setCycleCount(RotateTransition.INDEFINITE);
+        rotation.play();
     }
 
     private String toCssColor(Color color)

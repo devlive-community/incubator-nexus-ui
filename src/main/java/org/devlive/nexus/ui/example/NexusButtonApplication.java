@@ -39,7 +39,8 @@ public class NexusButtonApplication
                 .addChild(NexusButton.create("Small").size(ButtonSize.SMALL))
                 .addChild(NexusButton.create("Default").size(ButtonSize.DEFAULT))
                 .addChild(NexusButton.create("Large").size(ButtonSize.LARGE))
-                .addChild(NexusButton.create("Disabled").disabled(true));
+                .addChild(NexusButton.create("Disabled").type(ButtonType.WARNING).disabled(true))
+                .addChild(NexusButton.create("Loading").type(ButtonType.WARNING).loading(true));
 
         Scene scene = new Scene((Parent) root.render());
 
