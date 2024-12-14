@@ -13,17 +13,25 @@ import javafx.scene.shape.ArcType;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
+import lombok.Getter;
 import org.devlive.nexus.ui.core.Component;
 
 public class NexusButton
         extends Component
 {
-    private final String text;
     private Runnable clickHandler;
+
+    @Getter
+    private final String text;
+    @Getter
     private ButtonType type = ButtonType.DEFAULT;
+    @Getter
     private ButtonSize size = ButtonSize.DEFAULT;
+    @Getter
     private boolean disabled = false;
+    @Getter
     private boolean loading = false;
+    @Getter
     private RotateTransition rotation;
 
     // 添加静态工厂方法
