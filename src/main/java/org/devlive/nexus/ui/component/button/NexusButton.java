@@ -1,4 +1,4 @@
-package org.devlive.nexus.ui.component;
+package org.devlive.nexus.ui.component.button;
 
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -11,18 +11,13 @@ public class NexusButton
     private final String text;
     private Runnable clickHandler;
     private ButtonType type = ButtonType.DEFAULT;
+    private ButtonSize size = ButtonSize.DEFAULT;
 
-    // 按钮类型枚举
-    // Button type enumeration
-    public enum ButtonType
+    // 添加静态工厂方法
+    // Add static factory method
+    public static NexusButton create(String text)
     {
-        PRIMARY,
-        SUCCESS,
-        WARNING,
-        DANGER,
-        INFO,
-        TEXT,
-        DEFAULT
+        return new NexusButton(text);
     }
 
     public NexusButton(String text)
@@ -33,6 +28,12 @@ public class NexusButton
     public NexusButton type(ButtonType type)
     {
         this.type = type;
+        return this;
+    }
+
+    public NexusButton size(ButtonSize size)
+    {
+        this.size = size;
         return this;
     }
 
@@ -54,7 +55,7 @@ public class NexusButton
 
         // 根据类型应用不同的样式
         // Apply styles based on type
-        applyTypeStyle(button);
+        applyStyle(button);
 
         // 应用自定义样式
         // Apply custom styles
@@ -76,73 +77,78 @@ public class NexusButton
         return button;
     }
 
-    private void applyTypeStyle(Button button)
+    private void applyStyle(Button button)
     {
-        StringBuilder style = new StringBuilder();
         Color textColor;
         Color bgColor;
         Color hoverBgColor;
 
         switch (type) {
             case PRIMARY -> {
-                bgColor = Color.rgb(59, 130, 246); // Blue-500
-                hoverBgColor = Color.rgb(37, 99, 235); // Blue-600
+                bgColor = Color.rgb(59, 130, 246);
+                hoverBgColor = Color.rgb(37, 99, 235);
                 textColor = Color.WHITE;
             }
             case SUCCESS -> {
-                bgColor = Color.rgb(34, 197, 94); // Green-500
-                hoverBgColor = Color.rgb(22, 163, 74); // Green-600
+                bgColor = Color.rgb(34, 197, 94);
+                hoverBgColor = Color.rgb(22, 163, 74);
                 textColor = Color.WHITE;
             }
             case WARNING -> {
-                bgColor = Color.rgb(245, 158, 11); // Yellow-500
-                hoverBgColor = Color.rgb(217, 119, 6); // Yellow-600
+                bgColor = Color.rgb(245, 158, 11);
+                hoverBgColor = Color.rgb(217, 119, 6);
                 textColor = Color.WHITE;
             }
             case DANGER -> {
-                bgColor = Color.rgb(239, 68, 68); // Red-500
-                hoverBgColor = Color.rgb(220, 38, 38); // Red-600
+                bgColor = Color.rgb(239, 68, 68);
+                hoverBgColor = Color.rgb(220, 38, 38);
                 textColor = Color.WHITE;
             }
             case INFO -> {
-                bgColor = Color.rgb(99, 102, 241); // Indigo-500
-                hoverBgColor = Color.rgb(79, 70, 229); // Indigo-600
+                bgColor = Color.rgb(99, 102, 241);
+                hoverBgColor = Color.rgb(79, 70, 229);
                 textColor = Color.WHITE;
             }
             case TEXT -> {
-                bgColor = Color.TRANSPARENT;
-                hoverBgColor = Color.rgb(243, 244, 246); // Gray-100
-                textColor = Color.rgb(55, 65, 81); // Gray-700
+                bgColor = Color.WHITE;
+                hoverBgColor = Color.WHITE;
+                textColor = Color.rgb(55, 65, 81);
             }
-            default -> { // DEFAULT
-                bgColor = Color.rgb(243, 244, 246); // Gray-100
-                hoverBgColor = Color.rgb(229, 231, 235); // Gray-200
-                textColor = Color.rgb(55, 65, 81); // Gray-700
+            default -> {
+                bgColor = Color.rgb(243, 244, 246);
+                hoverBgColor = Color.rgb(229, 231, 235);
+                textColor = Color.rgb(55, 65, 81);
             }
         }
 
-        // 基础样式
-        // Base styles
-        style.append("-fx-background-radius: 6px;")
-                .append("-fx-padding: 8px 16px;")
-                .append("-fx-cursor: hand;")
-                .append("-fx-background-color: ").append(toCssColor(bgColor)).append(";")
-                .append("-fx-text-fill: ").append(toCssColor(textColor)).append(";");
+        // 组合基础样式和尺寸样式
+        String sizeStyle = getSizeStyle();
+        String baseStyle = "-fx-background-radius: 6px;" +
+                sizeStyle +
+                "-fx-cursor: hand;" +
+                "-fx-background-color: " + toCssColor(bgColor) + ";" +
+                "-fx-text-fill: " + toCssColor(textColor) + ";";
 
-        button.setStyle(style.toString());
+        button.setStyle(baseStyle);
 
-        // 鼠标悬停效果
-        // Mouse hover effect
-        button.setOnMouseEntered(e ->
-                button.setStyle(style.toString().replace(
-                        toCssColor(bgColor),
-                        toCssColor(hoverBgColor)
-                ))
-        );
+        button.setOnMouseEntered(e -> {
+            String hoverStyle = baseStyle.replace(
+                    toCssColor(bgColor),
+                    toCssColor(hoverBgColor)
+            );
+            button.setStyle(hoverStyle);
+        });
 
-        button.setOnMouseExited(e ->
-                button.setStyle(style.toString())
-        );
+        button.setOnMouseExited(e -> button.setStyle(baseStyle));
+    }
+
+    private String getSizeStyle()
+    {
+        return switch (size) {
+            case SMALL -> "-fx-padding: 4px 8px; -fx-font-size: 12px;";
+            case LARGE -> "-fx-padding: 12px 20px; -fx-font-size: 16px;";
+            default -> "-fx-padding: 8px 16px; -fx-font-size: 14px;";
+        };
     }
 
     private String toCssColor(Color color)
