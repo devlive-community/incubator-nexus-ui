@@ -12,6 +12,7 @@ public class NexusButton
     private Runnable clickHandler;
     private ButtonType type = ButtonType.DEFAULT;
     private ButtonSize size = ButtonSize.DEFAULT;
+    private boolean disabled = false;
 
     // 添加静态工厂方法
     // Add static factory method
@@ -37,6 +38,12 @@ public class NexusButton
         return this;
     }
 
+    public NexusButton disabled(boolean disabled)
+    {
+        this.disabled = disabled;
+        return this;
+    }
+
     @Override
     public NexusButton onClick(Runnable action)
     {
@@ -56,6 +63,10 @@ public class NexusButton
         // 根据类型应用不同的样式
         // Apply styles based on type
         applyStyle(button);
+
+        // 应用禁用状态
+        // Apply disabled state
+        button.setDisable(disabled);
 
         // 应用自定义样式
         // Apply custom styles
@@ -82,6 +93,8 @@ public class NexusButton
         Color textColor;
         Color bgColor;
         Color hoverBgColor;
+        Color disabledBgColor = Color.rgb(229, 231, 235); // Gray-200
+        Color disabledTextColor = Color.rgb(156, 163, 175); // Gray-400
 
         switch (type) {
             case PRIMARY -> {
@@ -122,24 +135,44 @@ public class NexusButton
         }
 
         // 组合基础样式和尺寸样式
+        // Combine base styles and size styles
         String sizeStyle = getSizeStyle();
-        String baseStyle = "-fx-background-radius: 6px;" +
-                sizeStyle +
-                "-fx-cursor: hand;" +
-                "-fx-background-color: " + toCssColor(bgColor) + ";" +
-                "-fx-text-fill: " + toCssColor(textColor) + ";";
+        StringBuilder styleBuilder = new StringBuilder()
+                .append("-fx-background-radius: 6px;")
+                .append(sizeStyle)
+                .append("-fx-cursor: ").append(disabled ? "cursor-not-allowed" : "hand").append(";")
+                .append("-fx-background-color: ").append(disabled ? toCssColor(disabledBgColor) : toCssColor(bgColor)).append(";")
+                .append("-fx-text-fill: ").append(disabled ? toCssColor(disabledTextColor) : toCssColor(textColor)).append(";");
 
+        // 添加禁用状态的透明度
+        // Add opacity for disabled state
+        if (disabled) {
+            styleBuilder.append("-fx-opacity: 0.4;");
+        }
+
+        String baseStyle = styleBuilder.toString();
         button.setStyle(baseStyle);
+        button.setDisable(disabled);
 
-        button.setOnMouseEntered(e -> {
-            String hoverStyle = baseStyle.replace(
-                    toCssColor(bgColor),
-                    toCssColor(hoverBgColor)
-            );
-            button.setStyle(hoverStyle);
-        });
+        // 只在非禁用状态下添加鼠标悬停效果
+        // Add hover effect only when not disabled
+        if (!disabled) {
+            button.setOnMouseEntered(e -> {
+                String hoverStyle = baseStyle.replace(
+                        toCssColor(bgColor),
+                        toCssColor(hoverBgColor)
+                );
+                button.setStyle(hoverStyle);
+            });
 
-        button.setOnMouseExited(e -> button.setStyle(baseStyle));
+            button.setOnMouseExited(e -> button.setStyle(baseStyle));
+        }
+        else {
+            // 清除鼠标事件处理器
+            // Clear mouse event handlers
+            button.setOnMouseEntered(null);
+            button.setOnMouseExited(null);
+        }
     }
 
     private String getSizeStyle()
